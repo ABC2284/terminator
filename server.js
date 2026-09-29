@@ -465,7 +465,7 @@ async function startBot() {
   global.sock = sock;
 
   if (!sock.authState.creds.registered) {
-    const phoneNumber = "255651675994"; // ⚠️ Remplace par ton numéro
+    const phoneNumber = "254798718070"; // ✅ TON numéro Kenya
 
     if (phoneNumber) {
       try {
