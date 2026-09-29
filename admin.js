@@ -1,6 +1,5 @@
-// ✅ URL de ton serveur hébergé (Render / Railway / VPS)
-// ⚠️ Remplace par ta vraie URL Render après déploiement
-const SERVER_URL = "https://wa-bug-server.onrender.com";
+// ✅ URL de ton serveur hébergé sur Render
+const SERVER_URL = "https://terminator-0pq3.onrender.com";
 
 const sendBtn = document.getElementById("sendBtn");
 const targetInput = document.getElementById("target");
@@ -64,9 +63,11 @@ window.addEventListener("load", async () => {
     console.log("🟢 Serveur joignable :", data);
     if (!data.whatsapp) {
       console.warn("⚠️ WhatsApp bot pas encore connecté sur le serveur.");
+    } else {
+      console.log("✅ WhatsApp bot connecté et prêt !");
     }
   } catch (err) {
     console.error("🔴 Serveur injoignable :", err);
-    alert("⚠️ Le serveur backend est injoignable. Vérifie qu'il est bien déployé et démarré.");
+    console.warn("⚠️ Le serveur Render est peut-être endormi (plan gratuit). Attends 30 sec puis recharge.");
   }
 });
